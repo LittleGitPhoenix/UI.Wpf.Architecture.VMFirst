@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+	<PropertyGroup>
+		<TargetFrameworks>net45;netcoreapp3.1</TargetFrameworks>
+		<UseWPF>true</UseWPF>
+		<AssemblyName>Phoenix.UI.Wpf.Architecture.VMFirst.Stylet</AssemblyName>
+		<RootNamespace>Phoenix.UI.Wpf.Architecture.VMFirst.Stylet</RootNamespace>
+		<Authors>Felix Leistner</Authors>
+		<Company>Little Phoenix</Company>
+		<Copyright>2020</Copyright>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IncludeSymbols>true</IncludeSymbols>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<Version>1.0.0-beta8</Version>
+		<PackageId>Phoenix.UI.Wpf.Architecture.VMFirst.Stylet</PackageId>
+		<Product>Phoenix.UI.Wpf.Architecture.VMFirst.Stylet</Product>
+		<PackageIcon>nuget.png</PackageIcon>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+		<PackageIconUrl>https://www.little-phoenix.de/nuget/nuget.ico</PackageIconUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\..\nuget.png" Pack="true" PackagePath="" />
+		<None Include="..\..\README.md" Pack="true" PackagePath="" />
+		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Autofac" Version="4.9.0" />
+		<PackageReference Include="Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider" Version="1.0.0-beta9" />
+		<PackageReference Include="Stylet" Version="1.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\VMFirst\VMFirst.csproj" />
+	</ItemGroup>
+
+</Project>
