@@ -38,10 +38,15 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.Stylet
 		#region (De)Constructors
 
 		/// <summary>
+		/// Constructor that uses a new <see cref="DefaultViewProvider"/> instance.
+		/// </summary>
+		public StyletViewManager() : this(new DefaultViewProvider()) { }
+		
+		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="viewProvider"> An optional <see cref="IViewProvider"/> used for resolving the views for given view models. The default is <see cref="DefaultViewProvider"/>. </param>
-		public StyletViewManager(IViewProvider viewProvider = null)
+		/// <param name="viewProvider"> An <see cref="IViewProvider"/> used for resolving the views for given view models. </param>
+		public StyletViewManager(IViewProvider viewProvider)
 		{
 			// Save parameters.
 

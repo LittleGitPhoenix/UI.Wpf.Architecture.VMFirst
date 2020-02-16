@@ -4,8 +4,6 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 using Autofac;
 using Stylet;
 
@@ -78,25 +76,25 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.Stylet
 		}
 
 		/// <summary>
-		/// Carries out default configuration of the IoC container. Override if you don't want to do this
+		/// Carries out default configuration of the IoC container. Override if you don't want to do this.
 		/// </summary>
+		/// <remarks> Normally this should not be overridden. For custom configuration of the IOC use <see cref="ConfigureIoC"/> instead. </remarks>
 		protected virtual void DefaultConfigureIoC(ContainerBuilder builder)
 		{
-			builder.Register<ViewManagerConfig>
-				(
-					context =>
-					{
-						return new ViewManagerConfig()
-						{
-							ViewFactory = this.GetInstance,
-							ViewAssemblies = new List<Assembly>() { this.GetType().Assembly }
-						};
-					}
-				)
-				.SingleInstance()
-				;
-			builder.RegisterType(typeof(TViewManager)).As<IViewManager>();
-
+			//builder.Register<ViewManagerConfig>
+			//	(
+			//		context =>
+			//		{
+			//			return new ViewManagerConfig()
+			//			{
+			//				ViewFactory = this.GetInstance,
+			//				ViewAssemblies = new List<Assembly>() { this.GetType().Assembly }
+			//			};
+			//		}
+			//	)
+			//	.SingleInstance()
+			//	;
+			builder.RegisterType(typeof(TViewManager)).As<IViewManager>().SingleInstance();
 			builder.RegisterInstance<IWindowManagerConfig>(this).ExternallyOwned();
 			builder.RegisterType<WindowManager>().As<IWindowManager>().SingleInstance();
 			builder.RegisterType<EventAggregator>().As<IEventAggregator>().SingleInstance();

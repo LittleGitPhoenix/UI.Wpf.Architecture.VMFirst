@@ -7,27 +7,16 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces;
 
 namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModels
 {
-	//TODO Move this into the another assembly that links to the DialogProvider.
-	//public interface IDialogProviderViewModel
-	//{
-	//	object DialogProvider { get; }
-	//}
-
-	//TODO Move this into the another assembly that links to the DialogProvider.
-	//public interface IDefaultDialogProviderViewModel
-	//{
-	//	object DefaultDialogProvider { get; }
-	//}
-
 	/// <summary>
 	/// <para> Base class for view-aware view models that due to this knowledge have special handlers like <see cref="OnInitialActivate"/>. </para>
 	/// <para> In order for this view model to properly function, its <see cref="BindView"/> method must be invoked passing in the linked view as soon as possible. </para>
-	/// <para> The <see cref="BindView"/> method will be automatically called if using the view resolver of <c>Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider</c>. </para>
+	/// <para> If the view resolver of <c>Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider</c> is used to create instance of this class, then <see cref="BindView"/> mustn't be called. The implemented interfaces <see cref="IViewAwareViewModel"/> and <see cref="IActivatedViewModel"/> suffice for setting everything up. </para>
 	/// </summary>
-	public abstract class ViewModelBase : INotifyPropertyChanged
+	public abstract class ViewModelBase : INotifyPropertyChanged, IViewAwareViewModel, IActivatedViewModel
 	{
 		#region Delegates / Events
 

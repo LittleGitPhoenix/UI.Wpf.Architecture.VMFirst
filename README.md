@@ -10,11 +10,11 @@ ___
 
 # ViewModel Interfaces
 
-**ViewModel** interfaces enhance simple view models to be able to handle certain commonly needed tasks by making them implement callback functions or properties. Standalone those interfaces don't do that much, but together with ***Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider*** (a separate **NuGet** package) they can be very helpful. 
+**ViewModel** interfaces enhance simple view models to be able to handle certain commonly needed tasks by making them implement callback functions or properties. Standalone those interfaces don't do that much, but together with the `DefaultViewProvider`  from the separate **NuGet** package ***Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider*** they can be very helpful. 
 
-Typically each of the interfaces has a static helper class with a similar name that provides a ***CreateViewModelSetupCallback*** method, that can be used with the ***DefaultViewProvider*** to setup the interface functionality for implementing view models. Basically the ***DefaultViewProvider*** invokes the callback provided by the ***CreateViewModelSetupCallback*** method once it has resolved view and view model and the callback handles hooking up the interface.
+Typically each of the interfaces has a static helper class with a similar name that provides a `CreateViewModelSetupCallback` method that creates a callback method that can be passed to the constructor of `DefaultViewProvider`. Those callbacks are invoked by the `DefaultViewProvider` everytime a view is resvolved. The callback then hooks the interface functionality for implementing view models up.
 
-For example the [***IActivatedViewModel***](#IActivatedViewModel) interface has a static helper class ***ActivatedViewModelHelper*** that returns a setup *callback* via its ***CreateViewModelSetupCallback*** method. This *callback* can be passed to a new instance of the ***DefaultViewProvider*** class. If the ***DefaultViewProvider*** has sucessfully resolved a view for a given view model, it invokes all the setup *callbacks* it has internally stored. The callback then checks if the view model and the view fullfill some requirements (e.g. if the view model implements the interface the callback is responsible for) and hooks the view model up. In case of the ***IActivatedViewModel*** this means, that the view models ***OnInitialActivate*** method will be hooked up to the views ***Loaded*** event.
+For example the [`IActivatedViewModel`](#IActivatedViewModel) interface has a static helper class `ActivatedViewModelHelper` that returns a setup *callback* via its `CreateViewModelSetupCallback` method. This *callback* can be passed to a new instance of the `DefaultViewProvider` class. If the `DefaultViewProvider` has successfully resolved a view for a given view model, it invokes all the setup *callbacks* it has internally stored. The callback then checks if the view model and the view fulfill some requirements (e.g. if the view model implements the interface the callback is responsible for) and hooks the view model up. In case of the `IActivatedViewModel` this means, that the view models `OnInitialActivate` method will be hooked up to the views **Loaded** event.
 
 ## IActivatedViewModel
 
@@ -52,7 +52,7 @@ var viewProvider = new DefaultViewProvider(setupCallback);
 
 ## IViewAwareViewModel
 
-This interface is for view models that need to know about their view. Please note, that directly accessing and interacting the view from a view model defies common **MVVM** principles and should be an absolute last resort.
+This interface is for view models that need to know about their view. Please note, that directly accessing and interacting with the view from a view model defies common **MVVM** principles and should be an absolute last resort.
 
 It provides the following property:
 
@@ -69,7 +69,7 @@ var viewProvider = new DefaultViewProvider(setupCallback);
 
 ## IBusyIndicatorViewModel
 
-This interface is for view models that utilize an [***IBusyIndicatorHandler***](#IBusyIndicatorHandler).
+This interface is for view models that utilize an [`IBusyIndicatorHandler`](#IBusyIndicatorHandler).
 
 It provides the following property:
 
@@ -85,37 +85,44 @@ var setupCallback = BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(bu
 var viewProvider = new DefaultViewProvider(setupCallback);
 ```
 
+___
+
 # IBusyIndicatorHandler
 
-The ***IBusyIndicatorHandler*** interface and its implementing class ***BusyIndicatorHandler*** can be used by view models that want to inform their bound view, that currently some work is being done. It provides bindable *signal properties* **IsBusy** and **BusyMessage** that the view can use and e.g. show some kind of waiting animation (**BusyIndicator**) or lock certain parts of the gui. 
+The `IBusyIndicatorHandler` interface and its implementing class `BusyIndicatorHandler` can be used by view models that want to inform their bound view, that currently some work is being executed. It provides the bindable *signal properties* `IsBusy` and `BusyMessage` that the view can use and show some kind of waiting animation (**BusyIndicator**) or lock certain parts of the UI. 
 
-**The *signal properties* can be changed by directly calling the below methods of the ***IBusyIndicatorHandler***.**
+The *signal properties* can be changed by directly calling the below methods of the `IBusyIndicatorHandler`.
 
-*Activates the busy indicator by setting the **IsBusy** property to **True** and sets the **BusyMessage** to the defined **message**.*
+- Activates the busy indicator by setting the `IsBusy` property to **True** and sets the `BusyMessage` to the defined **message**.
+
 ```csharp
 void Show(string message = null);
 ```
 
-*Overrides the currently displayed **BusyMessage**.*
+- Overrides the currently displayed `BusyMessage`.
+
 ```csharp
 void Override(string message = null);
 ```
 
-*Removes the topmost **BusyMessage** in the stack of all currently displayed messages. If this is the last one, then the busy indicator will be hidden.*
+- Removes the topmost `BusyMessage` in the stack of all currently displayed messages. If this is the last one, then the busy indicator will be hidden.
+
 ```csharp
 void Revoke();
 ```
 
-*Completely disables the busy indicator by setting the **IsBusy** property to **False**.*
+- Completely disables the busy indicator by setting the `IsBusy` property to **False**.
+
 ```csharp
 void Close();
 ```
 
-Normally the usage of the following methods is better that manually calling above methods, as below ones are made to encapsulate workload and implicitly handle changing the *signal properties*.
+Normally the usage of the following methods is better than manually calling above methods, as below ones are made to encapsulate workload and implicitly handle changing the *signal properties*.
 
 **Those methods will run in the calling thread and therefore block further execution.**
 
-*Activates the busy indicator while executing the passed method.*
+- Activates the busy indicator while executing the passed method.
+
 ```csharp
 void Execute(Action method, Action doneCallback = null);
 ```
@@ -128,7 +135,8 @@ void Execute(string message, Action method, Action doneCallback = null);
 
 **Those methods will await the passed function and therefore not block the calling thread.**
 
-*Activates the busy indicator while executing the passed asynchronous method.*
+- Activates the busy indicator while executing the passed asynchronous method.
+
 ```csharp
 Task ExecuteAsync(Func<Task> asyncMethod, Action doneCallback = null);
 ```
@@ -150,7 +158,8 @@ Task<T> ExecuteAsync<T>(string message, Func<Task<T>> asyncFunction, Action done
 
 **Those methods will await the passed function and therefore not block the calling thread. They additionally provide cancellation support.**
 
-*Activates the busy indicator while executing the passed asynchronous method with cancellation support.*
+- Activates the busy indicator while executing the passed asynchronous method with cancellation support.
+
 ```csharp
 Task ExecuteAsync(Func<CancellationToken, Task> asyncMethod, Action doneCallback = null, CancellationToken cancellationToken = default);
 ```
@@ -163,9 +172,10 @@ Task ExecuteAsync(string message, Func<CancellationToken, Task> asyncMethod, Act
 
 **Those methods will wrap the passed method in a task that will be awaited, therefore not blocking the calling thread and guaranteeing execution in another thread.**
 
-*Activates the busy indicator while executing the passed method that will be wrapped within its own Task.*
+- Activates the busy indicator while executing the passed method that will be wrapped within its own Task.
 
-*Wraps simple methods within their own awaited task.*
+⇒ Wraps simple methods within their own awaited task.
+
 ```csharp
 Task ExecuteTaskAsync(Action method, Action doneCallback = null, CancellationToken cancellationToken = default);
 ```
@@ -176,7 +186,8 @@ Task ExecuteTaskAsync(string message, Expression<Func<bool>> toggle, Action meth
 Task ExecuteTaskAsync(string message, Action method, Action doneCallback = null, CancellationToken cancellationToken = default);
 ```
 
-*Wraps asynchronous tasks within their own awaited task. This is useful, if it is unknown, whether the underlying task really runs synchronous or not.*
+⇒ Wraps asynchronous tasks within their own awaited task. This is useful, if it is unknown, whether the underlying task really runs synchronous or not.
+
 ```csharp
 Task ExecuteTaskAsync(Func<Task> asyncMethod, Action doneCallback = null);
 ```
@@ -187,7 +198,8 @@ Task ExecuteTaskAsync(string message, Expression<Func<bool>> toggle, Func<Task> 
 Task ExecuteTaskAsync(string message, Func<Task> asyncMethod, Action doneCallback = null);
 ```
 
-*Wraps asynchronous tasks within their own awaited and cancelable task. This is useful, if it is unknown, whether the underlying task really runs synchronous or not.*
+⇒ Wraps asynchronous tasks within their own awaited and cancelable task. This is useful, if it is unknown, whether the underlying task really runs synchronous or not.
+
 ```csharp
 Task ExecuteTaskAsync(Func<CancellationToken, Task> asyncMethod, Action doneCallback = null, CancellationToken cancellationToken = default);
 ```
@@ -198,8 +210,49 @@ Task ExecuteTaskAsync(string message, Expression<Func<bool>> toggle, Func<Cancel
 Task ExecuteTaskAsync(string message, Func<CancellationToken, Task> asyncMethod, Action doneCallback = null, CancellationToken cancellationToken = default);
 ```
 
-If a view model wants to use the ***IBusyIndicatorHandler*** it should implement the [IBusyIndicatorViewModel](#IBusyIndicatorViewModel) interface.
+If a view model wants to use the `IBusyIndicatorHandler` it should implement the [`IBusyIndicatorViewModel`](#IBusyIndicatorViewModel) interface.
+
+___
+
+# Stylet
+
+The **Phoenix.UI.Wpf.Architecture.VMFirst.Stylet** package provides some assets to be used together with [**Stylet**](https://github.com/canton7/Stylet).
+
+## StyletViewManager
+
+This is an implementation of **Stylet.IViewManager** where view model to view resolving is handled by a **Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.IViewProvider**.
+
+## StyletBootstrapper
+
+Custom bootstrapper inheriting from  **Stylet.BootstrapperBase** that uses **Autofac** as IOC and the [`StyletViewManager`](#StyletViewManager) as view manager. This should be the base class of the custom bootstrapper for each project.
+
+By default **Autofacs** is responsible to resolve the `StyletViewManager` and all its requirements. If not configured otherwise then the IOC will create the `StyletViewManager` with a default **Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider** that will not known about any of the above [**ViewModel Interfaces**](#ViewModel-Interfaces) thus being unable to hook anything up. Best practice is to override the `ConfigureIoC` method of the `StyletBootstrapper` and register the setup callbacks of the needed the **ViewModel Interfaces**.
+
+```csharp
+class Bootstrapper : StyletBootstrapper<MainWindowViewModel>
+{
+	/// <inheritdoc />
+	protected override void ConfigureIoC(ContainerBuilder builder)
+	{
+		base.ConfigureIoC(builder);
+
+		builder.RegisterType<BusyIndicatorHandler>().As<IBusyIndicatorHandler>();
+		builder.RegisterInstance((ViewModelSetupCallback) ActivatedViewModelHelper.CreateViewModelSetupCallback());
+		builder.RegisterInstance((ViewModelSetupCallback) DeactivatedViewModelHelper.CreateViewModelSetupCallback());
+		builder.RegisterInstance((ViewModelSetupCallback) ViewAwareViewModelHelper.CreateViewModelSetupCallback());
+		builder.Register(context => (ViewModelSetupCallback) BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(context.Resolve<Func<IBusyIndicatorHandler>>()));
+
+		builder
+			.RegisterType<DefaultViewProvider>()
+			.UsingConstructor(typeof(ICollection<ViewModelSetupCallback>))
+			.As<IViewProvider>()
+			.SingleInstance()
+			;
+	}
+}
+```
+___
 
 # Authors
 
-* **Felix Leistner** - _Initial release_
+* **Felix Leistner**: _v1.x_
