@@ -89,35 +89,31 @@ var viewProvider = new DefaultViewProvider(setupCallback);
 
 The ***IBusyIndicatorHandler*** interface and its implementing class ***BusyIndicatorHandler*** can be used by view models that want to inform their bound view, that currently some work is being done. It provides bindable *signal properties* **IsBusy** and **BusyMessage** that the view can use and e.g. show some kind of waiting animation (**BusyIndicator**) or lock certain parts of the gui. 
 
-The *signal properties* can be changed by directly calling the below methods of the ***IBusyIndicatorHandler***.
+**The *signal properties* can be changed by directly calling the below methods of the ***IBusyIndicatorHandler***.**
 
+*Activates the busy indicator by setting the **IsBusy** property to **True** and sets the **BusyMessage** to the defined **message**.*
 ```csharp
-/// <summary>
-/// Activates the busy indicator by setting the <see cref="IsBusy"/> property to <c>True</c>.
-/// </summary>
-/// <param name="message"> An optional message to display alongside the busy indicator. </param>
 void Show(string message = null);
+```
 
-/// <summary>
-/// Overrides the currently displayed busy message.
-/// </summary>
-/// <param name="message"> An optional message to display alongside the busy indicator. </param>
+*Overrides the currently displayed **BusyMessage**.*
+```csharp
 void Override(string message = null);
+```
 
-/// <summary>
-/// Removes the topmost busy message in the stack of all currently displayed messages. If this is the last one, then the busy indicator will be hidden.
-/// </summary>
+*Removes the topmost **BusyMessage** in the stack of all currently displayed messages. If this is the last one, then the busy indicator will be hidden.*
+```csharp
 void Revoke();
+```
 
-/// <summary>
-/// Completely disables the busy indicator by setting the <see cref="IsBusy"/> property to <c>False</c>.
-/// </summary>
+*Completely disables the busy indicator by setting the **IsBusy** property to **False**.*
+```csharp
 void Close();
 ```
 
 Normally the usage of the following methods is better that manually calling above methods, as below ones are made to encapsulate workload and implicitly handle changing the *signal properties*.
 
-- **Those methods will run in the calling thread and therefore block further execution.**
+**Those methods will run in the calling thread and therefore block further execution.**
 
 *Activates the busy indicator while executing the passed method.*
 ```csharp
