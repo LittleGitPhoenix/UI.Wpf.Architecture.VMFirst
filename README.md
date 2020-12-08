@@ -5,7 +5,11 @@
 | :heavy_check_mark: 4.5 | :heavy_check_mark: 3.1 | :heavy_check_mark: 5.0 |
 
 Collection of base projects for the **View Model First** architecture approach of **WPF** applications.
+___
 
+# Table of content
+
+[toc]
 ___
 
 # ViewModel Interfaces
@@ -91,13 +95,15 @@ ___
 
 The `IBusyIndicatorHandler` interface and its implementing class `BusyIndicatorHandler` can be used by view models that want to inform their bound view, that currently some work is being executed. It provides the bindable *signal properties* `IsBusy` and `BusyMessage` that the view can use and show some kind of waiting animation (**BusyIndicator**) or lock certain parts of the UI. 
 
-The *signal properties* can be changed by directly calling the below methods of the `IBusyIndicatorHandler`.
+The *signal properties* can be changed by directly calling the below methods of the `BusyIndicatorHandler`.
 
-- Activates the busy indicator by setting the `IsBusy` property to **True** and sets the `BusyMessage` to the defined **message**.
+- Activates the busy indicator by setting the `IsBusy` property to **True** and sets the `BusyMessage` to the defined **message**. Internally this pushes the new message onto a stack of messages and displays the topmost one.
 
 ```csharp
 void Show(string message = null);
 ```
+
+:heavy_exclamation_mark: Please note, that every message that is pushed with the `Show`method must be removed. Otherwise the `IsBusy`property won't be set to `false`. Either use one `Revoke` call for every message, or call `Close`if the workload has finished.
 
 - Overrides the currently displayed `BusyMessage`.
 
@@ -255,4 +261,4 @@ ___
 
 # Authors
 
-* **Felix Leistner**: _v1.x_
+* **Felix Leistner**: _v1.x_ - _v2.x_

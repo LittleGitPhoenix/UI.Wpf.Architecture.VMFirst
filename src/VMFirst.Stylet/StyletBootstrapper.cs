@@ -81,25 +81,24 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.Stylet
 		/// <remarks> Normally this should not be overridden. For custom configuration of the IOC use <see cref="ConfigureIoC"/> instead. </remarks>
 		protected virtual void DefaultConfigureIoC(ContainerBuilder builder)
 		{
-			//builder.Register<ViewManagerConfig>
-			//	(
-			//		context =>
-			//		{
-			//			return new ViewManagerConfig()
-			//			{
-			//				ViewFactory = this.GetInstance,
-			//				ViewAssemblies = new List<Assembly>() { this.GetType().Assembly }
-			//			};
-			//		}
-			//	)
-			//	.SingleInstance()
-			//	;
 			builder.RegisterType(typeof(TViewManager)).As<IViewManager>().SingleInstance();
 			builder.RegisterInstance<IWindowManagerConfig>(this).ExternallyOwned();
 			builder.RegisterType<WindowManager>().As<IWindowManager>().SingleInstance();
 			builder.RegisterType<EventAggregator>().As<IEventAggregator>().SingleInstance();
 			builder.RegisterType<MessageBoxViewModel>().As<IMessageBoxViewModel>().ExternallyOwned(); // Not singleton!
-			builder.RegisterAssemblyTypes(this.GetType().Assembly).ExternallyOwned();
+
+			//! Do not register any types automatically anymore. This can be done in 'ConfigureIoC'.
+			//// Register all public types of the assembly that implements this class. If this class is used directly, then do nothing. 
+			//var assembly = this.GetType().Assembly;
+			//if (assembly != System.Reflection.Assembly.GetExecutingAssembly())
+			//{
+			//	builder
+			//		.RegisterAssemblyTypes(assembly)
+			//		.PublicOnly()
+			//		//.Where(type => !type.Name.Contains("ProcessedByFody"))
+			//		.ExternallyOwned()
+			//		;
+			//}
 		}
 
 		/// <summary>
