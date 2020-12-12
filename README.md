@@ -14,49 +14,57 @@ ___
 
 # ViewModel Interfaces
 
-**ViewModel** interfaces enhance simple view models to be able to handle certain commonly needed tasks by making them implement callback functions or properties. Standalone those interfaces don't do that much, but together with the `DefaultViewProvider`  from the separate **NuGet** package ***Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider*** they can be very helpful. 
+**ViewModel** interfaces enhance simple view models to be able to handle certain commonly needed tasks by making them implement callback functions or properties. Standalone those interfaces don't do that much, but together with an `IViewProvider` like the `DefaultViewProvider` from the separate **NuGet** package ***Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider*** they can be very helpful. 
 
-Typically each of the interfaces has a static helper class with a similar name that provides a `CreateViewModelSetupCallback` method that creates a callback method that can be passed to the constructor of `DefaultViewProvider`. Those callbacks are invoked by the `DefaultViewProvider` everytime a view is resvolved. The callback then hooks the interface functionality for implementing view models up.
+When using an `IViewProvider` those viewmodel interfaces can automatically be hooked up via the `IViewProvider.ViewLoaded` event. This event provides the newly loaded viewmodel and its bound view via its `ViewLoadedEventArgs`. When the event is raised, callback methods can be executed that initialize all viewmodel interfaces the newly loaded viewmodel implements. Those callback methods can typically be found in a static helper class with a similar name to their viewmodel interface.
 
-For example the [`IActivatedViewModel`](#IActivatedViewModel) interface has a static helper class `ActivatedViewModelHelper` that returns a setup *callback* via its `CreateViewModelSetupCallback` method. This *callback* can be passed to a new instance of the `DefaultViewProvider` class. If the `DefaultViewProvider` has successfully resolved a view for a given view model, it invokes all the setup *callbacks* it has internally stored. The callback then checks if the view model and the view fulfill some requirements (e.g. if the view model implements the interface the callback is responsible for) and hooks the view model up. In case of the `IActivatedViewModel` this means, that the view models `OnInitialActivate` method will be hooked up to the views **Loaded** event.
+For example the [`IActivatedViewModel`](#IActivatedViewModel) interface has a static helper class `ActivatedViewModelHelper` with the callback method simply named `Callback`. This method takes in a viewmodel and its bound view as parameters.
+
+````csharp
+static void Callback(object viewModel, FrameworkElement view)
+````
+
+Since the event does provide those two parameters, all that needs to be done is attaching all callbacks methods of the viewmodel interfaces to the `IViewProvider.ViewLoaded` event. This should be done early on in an application.
 
 ## IActivatedViewModel
 
-This interface is for view models that need to know when their linked view has been loaded to e.g. perform some kind of initialization task.
+This interface is for view models that need to know when their linked view has been loaded. This can then be used to perform some kind of initialization task.
 
-It provides the following callback:
+It provides the following method:
 
 ```csharp
 void OnInitialActivate();
 ```
 
-### Usage with *DefaultViewProvider*
+### Usage with **`IViewProvider`**
 
 ```csharp
-var setupCallback = ActivatedViewModelHelper.CreateViewModelSetupCallback();
-var viewProvider = new DefaultViewProvider(setupCallback);
+IViewProvider provider = new DefaultViewProvider();
+provider.ViewLoaded += (sender, args) => ActivatedViewModelHelper.Callback(args.ViewModel, args.View);
 ```
 
 ## IDeactivatedViewModel
 
 This interface is for view models that need to know when their linked view is about to close. This will only apply to view models that are bound to a **Window** as only those provide the necessary **Closing** event.
 
-It provides the following callback:
+It provides the following method:
 
 ```csharp
 void OnClosing();
 ```
 
-### Usage with *DefaultViewProvider*
+### Usage with **`IViewProvider`**
 
 ```csharp
-var setupCallback = DeactivatedViewModelHelper.CreateViewModelSetupCallback();
-var viewProvider = new DefaultViewProvider(setupCallback);
+IViewProvider provider = new DefaultViewProvider();
+provider.ViewLoaded += (sender, args) => DeactivatedViewModelHelper.Callback(args.ViewModel, args.View);
 ```
 
 ## IViewAwareViewModel
 
-This interface is for view models that need to know about their view. Please note, that directly accessing and interacting with the view from a view model defies common **MVVM** principles and should be an absolute last resort.
+This interface is for view models that need to know about their view.
+
+:heavy_exclamation_mark: Please note, that directly accessing and interacting with the view from a view model defies common **MVVM** principles and should be an absolute last resort.
 
 It provides the following property:
 
@@ -64,11 +72,11 @@ It provides the following property:
 FrameworkElement View { get; }
 ```
 
-### Usage with *DefaultViewProvider*
+### Usage with **`IViewProvider`***
 
 ```csharp
-var setupCallback = ViewAwareViewModelHelper.CreateViewModelSetupCallback();
-var viewProvider = new DefaultViewProvider(setupCallback);
+IViewProvider provider = new DefaultViewProvider();
+provider.ViewLoaded += (sender, args) => ViewAwareViewModelHelper.Callback(args.ViewModel, args.View);
 ```
 
 ## IBusyIndicatorViewModel
@@ -81,14 +89,29 @@ It provides the following property:
 IBusyIndicatorHandler BusyIndicatorHandler { get; }
 ```
 
-### Usage with *DefaultViewProvider*
+### Usage with **`IViewProvider`**
+
+The setup of an `IBusyIndicatorViewModel` differs a little bit from the other ones, as it additionally needs an [`IBusyIndicatorHandler`](#IBusyIndicatorHandler) besides the viewmodel and its bound view. There are two ways of setting this viewmodel interface up:
+
+- `BusyIndicatorViewModelHelper.Callback`
+
+```csharp
+IViewProvider provider = new DefaultViewProvider();
+provider.ViewLoaded += (sender, args) =>
+{
+	IBusyIndicatorHandler busyIndicator = new IBusyIndicatorHandler(); // This must be an implementing class.
+	BusyIndicatorViewModelHelper.Callback(args.ViewModel, args.View, busyIndicator);
+};
+```
+
+- `BusyIndicatorViewModelHelper.CreateCallback` (this is the better option for IOC)
 
 ```csharp
 Func<IBusyIndicatorHandler> busyIndicatorFactory = () => new IBusyIndicatorHandler(); // This must be an implementing class.
-var setupCallback = BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(busyIndicatorFactory);
-var viewProvider = new DefaultViewProvider(setupCallback);
+var callback = BusyIndicatorViewModelHelper.CreateCallback(busyIndicatorFactory);
+IViewProvider provider = new DefaultViewProvider();
+provider.ViewLoaded += (sender, args) => callback.Invoke(args.ViewModel, args.View);
 ```
-
 ___
 
 # IBusyIndicatorHandler
@@ -230,30 +253,71 @@ This is an implementation of **Stylet.IViewManager** where view model to view re
 
 ## StyletBootstrapper
 
-Custom bootstrapper inheriting from  **Stylet.BootstrapperBase** that uses **Autofac** as IOC and the [`StyletViewManager`](#StyletViewManager) as view manager. This should be the base class of the custom bootstrapper for each project.
+Custom bootstrapper inheriting from  **Stylet.BootstrapperBase** that uses **Autofac** as IOC container and the [`StyletViewManager`](#StyletViewManager) as view manager. This should be the base class of the custom bootstrapper for each project.
 
-By default **Autofacs** is responsible to resolve the `StyletViewManager` and all its requirements. If not configured otherwise then the IOC will create the `StyletViewManager` with a default **Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider** that will not known about any of the above [**ViewModel Interfaces**](#ViewModel-Interfaces) thus being unable to hook anything up. Best practice is to override the `ConfigureIoC` method of the `StyletBootstrapper` and register the setup callbacks of the needed the **ViewModel Interfaces**.
+By default **Autofac** is responsible to resolve the `StyletViewManager` and all its requirements. If not configured otherwise then the IOC container will create the `StyletViewManager` with a default **Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider** that is not accessible and setting up any [viewmodel interfaces](#ViewModel-Interfaces) won't work. Therefore it is necessary to manually register `IViewProvider` with the IOC container. Following is an example how to do this:
+
+- Register the components:
 
 ```csharp
-class Bootstrapper : StyletBootstrapper<MainWindowViewModel>
+private static void RegisterViewModelFirst(ContainerBuilder builder)
 {
-	/// <inheritdoc />
-	protected override void ConfigureIoC(ContainerBuilder builder)
+	builder.RegisterType<BusyIndicatorHandler>().As<IBusyIndicatorHandler>();
+	builder.RegisterType<DefaultViewProvider>().UsingConstructor().As<IViewProvider>().SingleInstance();
+	builder.RegisterType<MetroDialogAssemblyViewProvider>().As<DialogAssemblyViewProvider>().SingleInstance();
+	builder.RegisterType<DefaultDialogManager>().As<IDefaultDialogManager>().SingleInstance();
+	
+	// Register the view loaded callbacks.
+	builder
+		.Register<Action<object, FrameworkElement>>
+		(
+			_ => ActivatedViewModelHelper.Callback
+		)
+		.SingleInstance()
+		;
+	builder
+		.Register<Action<object, FrameworkElement>>
+		(
+			_ => DeactivatedViewModelHelper.Callback
+		)
+		.SingleInstance()
+		;
+	builder
+		.Register<Action<object, FrameworkElement>>
+		(
+			_  => ViewAwareViewModelHelper.Callback
+		)
+		.SingleInstance()
+		;
+	builder
+		.Register<Action<object, FrameworkElement>>
+		(
+			context => BusyIndicatorViewModelHelper.CreateCallback(context.Resolve<Func<IBusyIndicatorHandler>>())
+		)
+		.SingleInstance()
+		;
+}
+```
+
+- Override the `Configure` of the `StyletBootstrapper` in your custom implementation:
+```csharp
+/// <inheritdoc />
+protected override void Configure()
+{	
+	// Get the callbacks and ALL view providers.
+	var callbacks = base.Container.Resolve<ICollection<Action<object, FrameworkElement>>>();
+	var viewProviders = base.Container.Resolve<ICollection<IViewProvider>>();
+	
+	// Hook the callbacks up to the ViewLoaded event of the view providers.
+	foreach (var viewProvider in viewProviders)
 	{
-		base.ConfigureIoC(builder);
-
-		builder.RegisterType<BusyIndicatorHandler>().As<IBusyIndicatorHandler>();
-		builder.RegisterInstance((ViewModelSetupCallback) ActivatedViewModelHelper.CreateViewModelSetupCallback());
-		builder.RegisterInstance((ViewModelSetupCallback) DeactivatedViewModelHelper.CreateViewModelSetupCallback());
-		builder.RegisterInstance((ViewModelSetupCallback) ViewAwareViewModelHelper.CreateViewModelSetupCallback());
-		builder.Register(context => (ViewModelSetupCallback) BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(context.Resolve<Func<IBusyIndicatorHandler>>()));
-
-		builder
-			.RegisterType<DefaultViewProvider>()
-			.UsingConstructor(typeof(ICollection<ViewModelSetupCallback>))
-			.As<IViewProvider>()
-			.SingleInstance()
-			;
+		viewProvider.ViewLoaded += (sender, args) =>
+		{
+			foreach (var callback in callbacks)
+			{
+				callback.Invoke(args.ViewModel, args.View);
+			}
+		};
 	}
 }
 ```

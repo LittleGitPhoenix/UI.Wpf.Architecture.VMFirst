@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Windows;
 using Moq;
 using NUnit.Framework;
@@ -11,43 +12,45 @@ namespace VMFirst.Test
 	{
 		[Test]
 		[Apartment(ApartmentState.STA)]
-		[Ignore("The 'IsLoaded' property of a 'FrameworkElement' cannot be manipulated. Since this is a requirement of this test, it is currently disabled.")]
+		[Ignore("The 'IsLoaded' property of a 'FrameworkElement' cannot be manipulated and it is also not set to True after manually raising the 'Loaded' event. Since this is a requirement of this test, it is currently disabled.")]
 		public void ActivatedViewModelHelper_Callback_Is_Invoked_Even_When_View_Is_Already_Loaded()
 		{
+			// Arrange
 			var viewMock = new Mock<FrameworkElement>();
-			viewMock.SetupGet(element => element.IsLoaded).Returns(true);
+			viewMock.SetupGet(element => element.IsLoaded).Returns(true); //! Doesn't work.
 			var view = viewMock.Object;
-
-			var counter = 0;
+			view.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent)); //! Doesn't work either.
+			
 			var viewModelMock = new Mock<IActivatedViewModel>();
-			viewModelMock.Setup(model => model.OnInitialActivate()).Callback(() => counter++).Verifiable();
+			viewModelMock.Setup(model => model.OnInitialActivate()).Verifiable();
 			var viewModel = viewModelMock.Object;
+			Action<object, FrameworkElement> setupCallback = ActivatedViewModelHelper.Callback;
 
-			var setupCallback = ActivatedViewModelHelper.CreateViewModelSetupCallback();
-
+			// Act
 			setupCallback.Invoke(viewModel, view);
-			Assert.That(counter, Is.EqualTo(1));
+
+			// Assert
+			viewModelMock.Verify(model => model.OnInitialActivate(), Times.Once);
 		}
 
 		[Test]
 		[Apartment(ApartmentState.STA)]
 		public void ActivatedViewModelHelper_Callback_Is_Invoked_Only_Once()
 		{
+			// Arrange
 			var view = new Window();
-
-			var counter = 0;
 			var viewModelMock = new Mock<IActivatedViewModel>();
-			viewModelMock.Setup(model => model.OnInitialActivate()).Callback(() => counter++).Verifiable();
+			viewModelMock.Setup(model => model.OnInitialActivate()).Verifiable();
 			var viewModel = viewModelMock.Object;
-
-			var setupCallback = ActivatedViewModelHelper.CreateViewModelSetupCallback();
+			Action<object, FrameworkElement> setupCallback = ActivatedViewModelHelper.Callback;
 			
+			// Act
 			setupCallback.Invoke(viewModel, view);
+			view.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+			view.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
 
-			view.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
-			Assert.That(counter, Is.EqualTo(1));
-			view.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
-			Assert.That(counter, Is.EqualTo(1));
+			// Assert
+			viewModelMock.Verify(model => model.OnInitialActivate(), Times.Once);
 		}
 	}
 }

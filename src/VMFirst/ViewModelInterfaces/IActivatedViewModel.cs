@@ -26,22 +26,21 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
 	public static class ActivatedViewModelHelper
 	{
 		/// <summary>
-		/// Creates a custom setup method for view models of type <see cref="IActivatedViewModel"/>.
+		/// Creates a callback for handling view models of type <see cref="IActivatedViewModel"/>.
 		/// </summary>
+		[Obsolete("Directly use the 'Callback' method instead of this factory.")]
 		public static Action<object, FrameworkElement> CreateViewModelSetupCallback()
-		{
-			return SetupViewModel;
-		}
+			=> Callback;
 
 		/// <summary>
-		/// Custom method that hooks up a callback from the <paramref name="viewModel"/> to the <paramref name="view"/>s <see cref="FrameworkElement.Loaded"/> event.
+		/// Callback that hooks up <see cref="IActivatedViewModel.OnInitialActivate"/> to the <paramref name="view"/>s <see cref="FrameworkElement.Loaded"/> event.
 		/// </summary>
 		/// <param name="viewModel"> The view model. </param>
 		/// <param name="view"> The view as <see cref="FrameworkElement"/>. </param>
-		private static void SetupViewModel(object viewModel, FrameworkElement view)
+		public static void Callback(object viewModel, FrameworkElement view)
 		{
 			if (!(viewModel is IActivatedViewModel activatedViewModel)) return;
-			ActivatedViewModelHelper.HandleLoading(view, activatedViewModel);
+			HandleLoading(view, activatedViewModel);
 		}
 
 		private static void HandleLoading(FrameworkElement view, IActivatedViewModel viewModel)

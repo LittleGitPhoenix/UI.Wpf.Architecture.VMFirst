@@ -25,7 +25,7 @@ namespace VMFirst.Test
 		{
 			var busyIndicatorHandlerMock = new Mock<IBusyIndicatorHandler>();
 			var viewModel = new BusyIndicatorViewModelWithSetableProperty();
-			var setupCallback = BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(() => busyIndicatorHandlerMock.Object);
+			var setupCallback = BusyIndicatorViewModelHelper.CreateCallback(() => busyIndicatorHandlerMock.Object);
 			
 			setupCallback.Invoke(viewModel, null);
 
@@ -38,7 +38,7 @@ namespace VMFirst.Test
 		{
 			var busyIndicatorHandlerMock = new Mock<IBusyIndicatorHandler>();
 			var viewModel = new BusyIndicatorViewModelWithAutoProperty();
-			var setupCallback = BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(() => busyIndicatorHandlerMock.Object);
+			var setupCallback = BusyIndicatorViewModelHelper.CreateCallback(() => busyIndicatorHandlerMock.Object);
 
 			setupCallback.Invoke(viewModel, null);
 
@@ -51,7 +51,7 @@ namespace VMFirst.Test
 		{
 			var busyIndicatorHandlerMock = new Mock<IBusyIndicatorHandler>();
 			var viewModel = new Mock<IBusyIndicatorViewModel>().Object; //! Mocked object does not have a setter or a backing field and this is why the test fails.
-			var setupCallback = BusyIndicatorViewModelHelper.CreateViewModelSetupCallback(() => busyIndicatorHandlerMock.Object);
+			var setupCallback = BusyIndicatorViewModelHelper.CreateCallback(() => busyIndicatorHandlerMock.Object);
 
 			setupCallback.Invoke(viewModel, null);
 

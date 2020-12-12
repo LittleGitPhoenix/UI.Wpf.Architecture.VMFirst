@@ -26,15 +26,40 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
 	public static class BusyIndicatorViewModelHelper
 	{
 		/// <summary>
-		/// Creates a custom setup method for view models of type <see cref="IBusyIndicatorViewModel"/>.
+		/// Creates a callback for handling view models of type <see cref="IBusyIndicatorViewModel"/>.
 		/// </summary>
 		/// <param name="busyIndicatorHandlerFactory"> Factory method for obtaining an <see cref="IBusyIndicatorHandler"/> instance. </param>
+		[Obsolete("Has been renamed to 'CreateCallback'.")]
 		public static Action<object, FrameworkElement> CreateViewModelSetupCallback(Func<IBusyIndicatorHandler> busyIndicatorHandlerFactory)
+			=> CreateCallback(busyIndicatorHandlerFactory);
+
+		/// <summary>
+		/// Creates a callback for handling view models of type <see cref="IBusyIndicatorViewModel"/>.
+		/// </summary>
+		/// <param name="busyIndicatorHandlerFactory"> Factory method for obtaining an <see cref="IBusyIndicatorHandler"/> instance. </param>
+		public static Action<object, FrameworkElement> CreateCallback(Func<IBusyIndicatorHandler> busyIndicatorHandlerFactory)
 		{
 			return (viewModel, view) => SetupViewModel(viewModel, view, busyIndicatorHandlerFactory);
 		}
 
+		/// <summary>
+		/// Callback that initializes the <see cref="IBusyIndicatorViewModel.BusyIndicatorHandler"/> property of an <see cref="IBusyIndicatorHandler"/>.
+		/// </summary>
+		/// <param name="viewModel"> The view model. </param>
+		/// <param name="view"> The view as <see cref="FrameworkElement"/>. </param>
+		/// <param name="busyIndicatorHandler"> An <see cref="IBusyIndicatorHandler"/> instance. This instance should be a different one per viewmodel. </param>
+		public static void Callback(object viewModel, FrameworkElement view, IBusyIndicatorHandler busyIndicatorHandler)
+		{
+			SetupViewModel(viewModel, view, busyIndicatorHandler);
+		}
+
 		private static void SetupViewModel(object viewModel, FrameworkElement view, Func<IBusyIndicatorHandler> busyIndicatorHandlerFactory)
+		{
+			if (!(viewModel is IBusyIndicatorViewModel)) return;
+			SetupViewModel(viewModel, view, busyIndicatorHandlerFactory.Invoke());
+		}
+
+		private static void SetupViewModel(object viewModel, FrameworkElement view, IBusyIndicatorHandler busyIndicatorHandler)
 		{
 			if (!(viewModel is IBusyIndicatorViewModel busyIndicatorViewModel)) return;
 
@@ -45,7 +70,7 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
 			var propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
 			if (propertyInfo?.CanWrite ?? false)
 			{
-				propertyInfo.SetValue(viewModel, busyIndicatorHandlerFactory.Invoke());
+				propertyInfo.SetValue(viewModel, busyIndicatorHandler);
 				return;
 			}
 
@@ -53,7 +78,7 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
 			var fieldInfo = type.GetField($"<{propertyName}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
 			if (fieldInfo != null)
 			{
-				fieldInfo.SetValue(viewModel, busyIndicatorHandlerFactory.Invoke());
+				fieldInfo.SetValue(viewModel, busyIndicatorHandler);
 				return;
 			}
 			

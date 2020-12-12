@@ -28,19 +28,18 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
 	public static class ViewAwareViewModelHelper
 	{
 		/// <summary>
-		/// Creates a custom setup method for view models of type <see cref="IViewAwareViewModel"/>.
+		/// Creates a callback for handling view models of type <see cref="IViewAwareViewModel"/>.
 		/// </summary>
+		[Obsolete("Directly use the 'Callback' method instead of this factory.")]
 		public static Action<object, FrameworkElement> CreateViewModelSetupCallback()
-		{
-			return SetupViewModel;
-		}
+			=> Callback;
 
 		/// <summary>
-		/// Custom method that binds the <paramref name="view"/> to an <paramref name="viewModel"/> of type <see cref="IViewAwareViewModel"/>.
+		/// Callback that binds the <paramref name="view"/> to a <paramref name="viewModel"/> of type <see cref="IViewAwareViewModel"/>.
 		/// </summary>
 		/// <param name="viewModel"> The view model. </param>
 		/// <param name="view"> The view as <see cref="FrameworkElement"/>. </param>
-		private static void SetupViewModel(object viewModel, FrameworkElement view)
+		public static void Callback(object viewModel, FrameworkElement view)
 		{
 			if (!(viewModel is IViewAwareViewModel viewAwareViewModel)) return;
 

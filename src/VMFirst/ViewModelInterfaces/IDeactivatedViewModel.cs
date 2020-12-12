@@ -29,23 +29,22 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
 	public static class DeactivatedViewModelHelper
 	{
 		/// <summary>
-		/// A custom setup method for view models of type <see cref="IDeActivatedViewModel"/>.
+		/// Creates a callback for handling view models of type <see cref="IDeActivatedViewModel"/>.
 		/// </summary>
+		[Obsolete("Directly use the 'Callback' method instead of this factory.")]
 		public static Action<object, FrameworkElement> CreateViewModelSetupCallback()
-		{
-			return SetupViewModel;
-		}
-		
+			=> Callback;
+
 		/// <summary>
-		/// Custom method that hooks up a callback from the <paramref name="viewModel"/> to the <paramref name="view"/>s <see cref="Window.Closing"/> event.
+		/// Callback that hooks up <see cref="IDeActivatedViewModel.OnClosing"/> to the <paramref name="view"/>s <see cref="Window.Closing"/> event.
 		/// </summary>
 		/// <param name="viewModel"> The view model. </param>
 		/// <param name="view"> The view as <see cref="FrameworkElement"/>. </param>
-		private static void SetupViewModel(object viewModel, FrameworkElement view)
+		public static void Callback(object viewModel, FrameworkElement view)
 		{
 			if (!(viewModel is IDeActivatedViewModel deactivatedViewModel)) return;
 			if (!(view is Window window)) return;
-			DeactivatedViewModelHelper.HandleLoading(window, deactivatedViewModel);
+			HandleLoading(window, deactivatedViewModel);
 		}
 
 		private static void HandleLoading(Window window, IDeActivatedViewModel viewModel)

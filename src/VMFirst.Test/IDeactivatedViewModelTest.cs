@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Windows;
 using Moq;
@@ -14,6 +15,7 @@ namespace VMFirst.Test
 		[Apartment(ApartmentState.STA)]
 		public void DeactivatedViewModelHelper_Callback_Is_Invoked_Until_Window_Is_Really_Closed()
 		{
+			// Arrange
 			var view = new Window();
 
 			var counter = 0;
@@ -32,17 +34,20 @@ namespace VMFirst.Test
 				;
 			var viewModel = viewModelMock.Object;
 
-			var setupCallback = DeactivatedViewModelHelper.CreateViewModelSetupCallback();
+			Action<object, FrameworkElement> setupCallback = DeactivatedViewModelHelper.Callback;
+			
+			// Act
 			setupCallback.Invoke(viewModel, view);
 
+			// Assert
 			view.Close();
-			Assert.That(counter, Is.EqualTo(1));
+			viewModelMock.Verify(model => model.OnClosing(It.IsAny<CancelEventArgs>()), Times.Exactly(1));
 			view.Close();
-			Assert.That(counter, Is.EqualTo(2));
+			viewModelMock.Verify(model => model.OnClosing(It.IsAny<CancelEventArgs>()), Times.Exactly(2));
 			view.Close();
-			Assert.That(counter, Is.EqualTo(3));
+			viewModelMock.Verify(model => model.OnClosing(It.IsAny<CancelEventArgs>()), Times.Exactly(3));
 			view.Close();
-			Assert.That(counter, Is.EqualTo(3));
+			viewModelMock.Verify(model => model.OnClosing(It.IsAny<CancelEventArgs>()), Times.Exactly(3));
 		}
 	}
 }

@@ -52,6 +52,7 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.Stylet
 
 			// Initialize fields.
 			_viewProvider = viewProvider ?? new DefaultViewProvider();
+			_viewProvider.ViewLoaded += this.NewViewLoaded;
 		}
 
 		#endregion
@@ -92,7 +93,6 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.Stylet
 			{
 				// If the view couldn't be obtained create a new one.
 				view = this.CreateViewForModel(model);
-				this.BindViewToModel(view, model);
 			}
 			return view;
 		}
@@ -103,6 +103,14 @@ namespace Phoenix.UI.Wpf.Architecture.VMFirst.Stylet
 			return _viewProvider.GetViewInstance(model);
 		}
 		
+		/// <summary>
+		/// This is called by <see cref="_viewProvider"/> every time a new view has been loaded.
+		/// </summary>
+		internal virtual void NewViewLoaded(object sender, ViewLoadedEventArgs args)
+		{
+			this.BindViewToModel(args.View, args.ViewModel);
+		}
+
 		/// <inheritdoc />
 		public void BindViewToModel(UIElement view, object model)
 		{
