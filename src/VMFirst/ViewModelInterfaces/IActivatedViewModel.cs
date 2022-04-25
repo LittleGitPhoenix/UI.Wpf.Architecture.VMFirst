@@ -2,88 +2,83 @@
 //! This file is subject to the terms and conditions defined in file 'LICENSE.md', which is part of this source code package.
 #endregion
 
-
-using System;
-using System.Threading;
 using System.Windows;
 
-namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces
+namespace Phoenix.UI.Wpf.Architecture.VMFirst.ViewModelInterfaces;
+
+/// <summary>
+/// Interface for view models that have a callback that is invoked when their view has been loaded completely.
+/// </summary>
+public interface IActivatedViewModel
 {
 	/// <summary>
-	/// Interface for view models that have a callback that is invoked when their view has been loaded completely.
+	/// Called only once after the linked view has been loaded and is ready to use.
 	/// </summary>
-	public interface IActivatedViewModel
-	{
-		/// <summary>
-		/// Called only once after the linked view has been loaded and is ready to use.
-		/// </summary>
-		void OnInitialActivate();
-	}
+	void OnInitialActivate();
+}
+
+/// <summary>
+/// Helper to setup an <see cref="IActivatedViewModel"/> via the <c>SetupViewModel</c> method of the <c>Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider</c>.
+/// </summary>
+public static class ActivatedViewModelHelper
+{
+	/// <summary>
+	/// Creates a callback for handling view models of type <see cref="IActivatedViewModel"/>.
+	/// </summary>
+	[Obsolete("Directly use the 'Callback' method instead of this factory.")]
+	public static Action<object, FrameworkElement> CreateViewModelSetupCallback() => Callback;
 
 	/// <summary>
-	/// Helper to setup an <see cref="IActivatedViewModel"/> via the <c>SetupViewModel</c> method of the <c>Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider</c>.
+	/// Callback that hooks up <see cref="IActivatedViewModel.OnInitialActivate"/> to the <paramref name="view"/>s <see cref="FrameworkElement.Loaded"/> event.
 	/// </summary>
-	public static class ActivatedViewModelHelper
+	/// <param name="viewModel"> The view model. </param>
+	/// <param name="view"> The view as <see cref="FrameworkElement"/>. </param>
+	public static void Callback(object viewModel, FrameworkElement view)
 	{
-		/// <summary>
-		/// Creates a callback for handling view models of type <see cref="IActivatedViewModel"/>.
-		/// </summary>
-		[Obsolete("Directly use the 'Callback' method instead of this factory.")]
-		public static Action<object, FrameworkElement> CreateViewModelSetupCallback()
-			=> Callback;
+		if (viewModel is not IActivatedViewModel activatedViewModel) return;
+		HandleLoading(view, activatedViewModel);
+	}
 
-		/// <summary>
-		/// Callback that hooks up <see cref="IActivatedViewModel.OnInitialActivate"/> to the <paramref name="view"/>s <see cref="FrameworkElement.Loaded"/> event.
-		/// </summary>
-		/// <param name="viewModel"> The view model. </param>
-		/// <param name="view"> The view as <see cref="FrameworkElement"/>. </param>
-		public static void Callback(object viewModel, FrameworkElement view)
+	private static void HandleLoading(FrameworkElement view, IActivatedViewModel viewModel)
+	{
+		if (view is null) return;
+		if (viewModel is null) return;
+
+		void OnLoaded()
 		{
-			if (!(viewModel is IActivatedViewModel activatedViewModel)) return;
-			HandleLoading(view, activatedViewModel);
+			// Execute the initial activated method in the view model.
+			viewModel.OnInitialActivate();
 		}
 
-		private static void HandleLoading(FrameworkElement view, IActivatedViewModel viewModel)
+		// Check if the view has been loaded already.
+		if (view.IsLoaded)
 		{
-			if (view is null) return;
-			if (viewModel is null) return;
+			// YES: Directly execute the loaded callback.
+			OnLoaded();
+		}
+		else
+		{
+			var loaded = 0;
 
-			void OnLoaded()
+			void LoadedHandler(object sender, RoutedEventArgs args)
 			{
-				// Execute the initial activated method in the view model.
-				viewModel.OnInitialActivate();
-			}
+				if (view is null) return;
+				if (viewModel is null) return;
 
-			// Check if the view has been loaded already.
-			if (view.IsLoaded)
-			{
-				// YES: Directly execute the loaded callback.
-				OnLoaded();
-			}
-			else
-			{
-				var loaded = 0;
+				view.Loaded -= LoadedHandler;
 
-				void LoadedHandler(object sender, RoutedEventArgs args)
+				// This must be executed only once and never again.
+				if (Interlocked.CompareExchange(ref loaded, 1, 0) == 0)
 				{
-					if (view is null) return;
-					if (viewModel is null) return;
-
-					view.Loaded -= LoadedHandler;
-
-					// This must be executed only once and never again.
-					if (Interlocked.CompareExchange(ref loaded, 1, 0) == 0)
-					{
-						OnLoaded();
-					}
-
-					view = null;
-					viewModel = null;
+					OnLoaded();
 				}
 
-				// NO: Hook up to the loaded event.
-				view.Loaded += LoadedHandler;
+				view = null;
+				viewModel = null;
 			}
+
+			// NO: Hook up to the loaded event.
+			view.Loaded += LoadedHandler;
 		}
 	}
 }

@@ -2,7 +2,7 @@
 
 | .NET Framework | .NET Core | .NET |
 | :-: | :-: | :-: |
-| :heavy_check_mark: 4.5 | :heavy_check_mark: 3.1 | :heavy_check_mark: 5.0 |
+| :heavy_check_mark: 4.8 | :heavy_check_mark: 3.1 | :heavy_check_mark: 5.0 :heavy_check_mark: 6.0 |
 
 Collection of base projects for the **View Model First** architecture approach of **WPF** applications.
 ___
@@ -64,7 +64,15 @@ provider.ViewLoaded += (sender, args) => DeactivatedViewModelHelper.Callback(arg
 
 This interface is for view models that need to know about their view.
 
-:heavy_exclamation_mark: Please note, that directly accessing and interacting with the view from a view model defies common **MVVM** principles and should be an absolute last resort.
+<div style='padding:0.1em; border-style: solid; border-width: 0px; border-left-width: 10px; border-color: #ff0000; background-color: #ff000020' >
+	<span style='margin-left:1em; text-align:left'>
+    	<b>Warning</b>
+    </span>
+    <br>
+	<div style='margin-left:1em; margin-right:1em;'>
+		Please note, that directly accessing and interacting with the view from a view model defies common <b>MVVM</b> principles and should be an absolute last resort.
+    </div>
+</div>
 
 It provides the following property:
 
@@ -72,7 +80,7 @@ It provides the following property:
 FrameworkElement View { get; }
 ```
 
-### Usage with **`IViewProvider`***
+### Usage with **`IViewProvider`**
 
 ```csharp
 IViewProvider provider = new DefaultViewProvider();
@@ -126,7 +134,15 @@ The *signal properties* can be changed by directly calling the below methods of 
 void Show(string message = null);
 ```
 
-:heavy_exclamation_mark: Please note, that every message that is pushed with the `Show`method must be removed. Otherwise the `IsBusy`property won't be set to `false`. Either use one `Revoke` call for every message, or call `Close`if the workload has finished.
+<div style='padding:0.1em; border-style: solid; border-width: 0px; border-left-width: 10px; border-color: #ff0000; background-color: #ff000020' >
+	<span style='margin-left:1em; text-align:left'>
+    	<b>Warning</b>
+    </span>
+    <br>
+	<div style='margin-left:1em; margin-right:1em;'>
+		Please note, that every message that is pushed with the <i>Show</i> method must be removed. Otherwise the <i>IsBusy</i> property won't be set to <i>false</i>. Either use one <i>Revoke</i> call for every message, or call <i>Close</i> if the workload has finished.
+    </div>
+</div>
 
 - Overrides the currently displayed `BusyMessage`.
 
@@ -251,62 +267,60 @@ The **Phoenix.UI.Wpf.Architecture.VMFirst.Stylet** package provides some assets 
 
 This is an implementation of **Stylet.IViewManager** where view model to view resolving is handled by a **Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.IViewProvider**.
 
-## StyletBootstrapper
+By default **Autofac** is responsible to resolve the `StyletViewManager` and all its requirements. If not configured otherwise, the IOC container will create it with `Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider` as its default `IViewProvider`. This `IViewProvider` is not accessible and setting up any [viewmodel interfaces](#ViewModel-Interfaces) won't work. Therefore it is recommended to manually register this or any other `IViewProvider` with the IOC container. Following is an example how to do this:
 
-Custom bootstrapper inheriting from  **Stylet.BootstrapperBase** that uses **Autofac** as IOC container and the [`StyletViewManager`](#StyletViewManager) as view manager. This should be the base class of the custom bootstrapper for each project.
-
-By default **Autofac** is responsible to resolve the `StyletViewManager` and all its requirements. If not configured otherwise then the IOC container will create the `StyletViewManager` with a default **Phoenix.UI.Wpf.Architecture.VMFirst.ViewProvider.DefaultViewProvider** that is not accessible and setting up any [viewmodel interfaces](#ViewModel-Interfaces) won't work. Therefore it is necessary to manually register `IViewProvider` with the IOC container. Following is an example how to do this:
-
-- Register the components:
+- Register the services:
 
 ```csharp
 private static void RegisterViewModelFirst(ContainerBuilder builder)
 {
-	builder.RegisterType<BusyIndicatorHandler>().As<IBusyIndicatorHandler>();
-	builder.RegisterType<DefaultViewProvider>().UsingConstructor().As<IViewProvider>().SingleInstance();
+	// Register the view loaded callbacks that will be used by the DefaultViewProvider.
+	builder
+		.Register<Action<object, FrameworkElement>>(_ => ActivatedViewModelHelper.Callback)
+		.SingleInstance()
+		;
+	builder
+		.Register<Action<object, FrameworkElement>>(_ => DeactivatedViewModelHelper.Callback)
+		.SingleInstance()
+		;
+	builder
+		.Register<Action<object, FrameworkElement>>(_  => ViewAwareViewModelHelper.Callback)
+		.SingleInstance()
+		;
+	builder
+		.Register<Action<object, FrameworkElement>>(context => BusyIndicatorViewModelHelper.CreateCallback(context.Resolve<Func<IBusyIndicatorHandler>>()))
+		.SingleInstance()
+		;
+
+	// Register the view provider. 
+	builder.RegisterType<DefaultViewProvider>().As<IViewProvider>().SingleInstance();
+
+	// Register the special view provider needed by the DialogProvider to display (metro) dialogs.
 	builder.RegisterType<MetroDialogAssemblyViewProvider>().As<DialogAssemblyViewProvider>().SingleInstance();
+
+	// Register the DefaultDialogManager that uses the applications main window to display dialogs.
 	builder.RegisterType<DefaultDialogManager>().As<IDefaultDialogManager>().SingleInstance();
-	
-	// Register the view loaded callbacks.
-	builder
-		.Register<Action<object, FrameworkElement>>
-		(
-			_ => ActivatedViewModelHelper.Callback
-		)
-		.SingleInstance()
-		;
-	builder
-		.Register<Action<object, FrameworkElement>>
-		(
-			_ => DeactivatedViewModelHelper.Callback
-		)
-		.SingleInstance()
-		;
-	builder
-		.Register<Action<object, FrameworkElement>>
-		(
-			_  => ViewAwareViewModelHelper.Callback
-		)
-		.SingleInstance()
-		;
-	builder
-		.Register<Action<object, FrameworkElement>>
-		(
-			context => BusyIndicatorViewModelHelper.CreateCallback(context.Resolve<Func<IBusyIndicatorHandler>>())
-		)
-		.SingleInstance()
-		;
+
+	// Register the busy handler.
+	builder.RegisterType<BusyIndicatorHandler>().As<IBusyIndicatorHandler>();
 }
 ```
 
-- Override the `Configure` of the `StyletBootstrapper` in your custom implementation:
+- Override `StyletBootstrapper.BeforeLaunch` in your custom bootstrapper implementation to setup handling of [viewmodel interfaces](#ViewModel-Interfaces).
 ```csharp
 /// <inheritdoc />
-protected override void Configure()
-{	
+protected override void BeforeLaunch
+(
+	IContainer container,
+	string applicationName,
+	Version assemblyVersion,
+	Version fileVersion,
+	string informationalVersion
+)
+{
 	// Get the callbacks and ALL view providers.
-	var callbacks = base.Container.Resolve<ICollection<Action<object, FrameworkElement>>>();
-	var viewProviders = base.Container.Resolve<ICollection<IViewProvider>>();
+	var callbacks = container.Resolve<ICollection<Action<object, FrameworkElement>>>();
+	var viewProviders = container.Resolve<ICollection<IViewProvider>>();
 	
 	// Hook the callbacks up to the ViewLoaded event of the view providers.
 	foreach (var viewProvider in viewProviders)
@@ -321,8 +335,44 @@ protected override void Configure()
 	}
 }
 ```
+
+## StyletBootstrapper
+
+A custom bootstrapper inheriting from  **Stylet.BootstrapperBase** that uses **Autofac** as IOC container and the [`StyletViewManager`](#StyletViewManager) as view manager. This should be the base class of the bootstrapper for each project.
+
+Below is template for a custom bootstrapper.
+
+```c#
+internal class MyBootstrapper : StyletBootstrapper<MyWindow>
+{
+	/// <inheritdoc />
+	protected override void OnStart() { }
+
+	/// <inheritdoc />
+	protected override void RegisterServices(ContainerBuilder builder) { }
+
+	/// <inheritdoc />
+	protected override void BeforeLaunch
+	(
+		IContainer container,
+		string applicationName,
+		Version assemblyVersion,
+		Version fileVersion,
+		string informationalVersion
+	) { }
+
+	/// <inheritdoc />
+	protected override void AfterLaunch(IContainer container) { }
+
+	/// <inheritdoc />
+	protected override void OnClosing(IContainer container, ExitEventArgs args) { }
+}
+```
+
+
+
 ___
 
 # Authors
 
-* **Felix Leistner**: _v1.x_ - _v2.x_
+* **Felix Leistner**: _v1.x_ - _v3.x_
